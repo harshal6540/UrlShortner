@@ -1,0 +1,10 @@
+*.class
+*.jar
+*.log
+.idea/
+*.iml
+.vscode/
+target/
+out/
+*.mv.db
+*.trace.db
