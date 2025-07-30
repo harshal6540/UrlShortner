@@ -1,24 +1,39 @@
 package com.example.urlshortner;
 
 import com.sun.net.httpserver.*;
+//import com.sun.tools.javac.util.Log;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class UrlShortenerServer {
-    private static final Map<String, String> urlMap = new HashMap<>();
-
+    static final Map<String, String> urlMap = new HashMap<>();
     public static void main(String[] args) throws IOException {
+
+
+        DatabaseUtil.initializeSchema();
+    
+        try (Connection conn = DatabaseUtil.getConnection()) {
+            System.out.println("Connected to H2 Database Successfully!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/shorten", new ShortenHandler());
         server.createContext("/redirect", new RedirectHandler());
+        server.createContext("/signup", new SignUpHandler());
+        server.createContext("/login", new LogInHandler());
         server.createContext("/", new RootHandler());
         server.setExecutor(null);
-        System.out.println("Server started on port 8000...");
+        System.out.println("Server started on port 8100...");
         server.start();
     }
 
