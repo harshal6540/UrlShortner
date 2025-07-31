@@ -6,15 +6,26 @@ import com.sun.net.httpserver.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class UrlShortenerServer {
     static final Map<String, String> urlMap = new HashMap<>();
-
-    
     public static void main(String[] args) throws IOException {
+
+
+        DatabaseUtil.initializeSchema();
+    
+        try (Connection conn = DatabaseUtil.getConnection()) {
+            System.out.println("Connected to H2 Database Successfully!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/shorten", new ShortenHandler());
         server.createContext("/redirect", new RedirectHandler());

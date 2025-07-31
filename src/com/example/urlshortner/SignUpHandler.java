@@ -8,15 +8,11 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 
 public class SignUpHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-
-        UserData userData = new UserData();
-        
-        if (!exchange.getRequestMethod().equals("POST")) {
+        if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
             exchange.sendResponseHeaders(405, 0);
             exchange.close();
             return;
@@ -36,23 +32,19 @@ public class SignUpHandler implements HttpHandler {
             if (key.equals("username")) username = value;
             else if (key.equals("password")) password = value;
         }
-        String response = "";
 
-        if(userData.userExists(username)) {
+        String response;
+        User existingUser = UserDao.getUserByUsername(username);
+        if (existingUser != null) {
             response = "Username already exists";
             exchange.sendResponseHeaders(409, response.length());
-            exchange.getResponseBody().write(response.getBytes());
-            exchange.close();
-            return;
+        } else {
+            User newUser = new User(username, password);
+            UserDao.saveUser(newUser);
+            response = "Signup successful for user: " + username;
+            exchange.sendResponseHeaders(200, response.length());
         }
-        else{
-            User user = new User(username, password);
-            userData.saveUser(user);
-            response ="Signup successful" + " for user: " + username;
-        }
-        
 
-        exchange.sendResponseHeaders(200, response.length());
         exchange.getResponseBody().write(response.getBytes());
         exchange.close();
     }

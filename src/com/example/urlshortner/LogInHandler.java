@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 public class LogInHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        if (!exchange.getRequestMethod().equals("POST")) {
+        if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
             exchange.sendResponseHeaders(405, 0);
             exchange.close();
             return;
@@ -33,7 +33,7 @@ public class LogInHandler implements HttpHandler {
             else if (key.equals("password")) password = value;
         }
 
-        User user = UserData.getUser(username);
+        User user = UserDao.getUserByUsername(username);
         String response;
 
         if (user != null && user.getPassword().equals(password)) {
@@ -43,9 +43,8 @@ public class LogInHandler implements HttpHandler {
             response = "Invalid credentials";
             exchange.sendResponseHeaders(401, response.length());
         }
-        String check="Login successful";
+
         exchange.getResponseBody().write(response.getBytes());
-        exchange.getResponseBody().write(check.getBytes());
         exchange.close();
     }
 }
