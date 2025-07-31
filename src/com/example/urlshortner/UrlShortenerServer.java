@@ -1,7 +1,6 @@
 package com.example.urlshortner;
 
 import com.sun.net.httpserver.*;
-//import com.sun.tools.javac.util.Log;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -14,17 +13,16 @@ import java.util.UUID;
 
 public class UrlShortenerServer {
     static final Map<String, String> urlMap = new HashMap<>();
+
     public static void main(String[] args) throws IOException {
 
-
         DatabaseUtil.initializeSchema();
-    
+
         try (Connection conn = DatabaseUtil.getConnection()) {
             System.out.println("Connected to H2 Database Successfully!");
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
 
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/shorten", new ShortenHandler());
@@ -33,12 +31,26 @@ public class UrlShortenerServer {
         server.createContext("/login", new LogInHandler());
         server.createContext("/", new RootHandler());
         server.setExecutor(null);
-        System.out.println("Server started on port 8100...");
+        System.out.println("Server started on port 8000...");
         server.start();
+    }
+
+    static void addCORSHeaders(HttpExchange exchange) {
+        Headers headers = exchange.getResponseHeaders();
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        headers.add("Access-Control-Allow-Headers", "Content-Type");
     }
 
     static class RootHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            addCORSHeaders(exchange);
+
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
             String response = "Welcome to URL Shortener!";
             exchange.sendResponseHeaders(200, response.getBytes().length);
             try (OutputStream os = exchange.getResponseBody()) {
@@ -49,7 +61,14 @@ public class UrlShortenerServer {
 
     static class ShortenHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
-            if (!"POST".equals(exchange.getRequestMethod())) {
+            addCORSHeaders(exchange);
+
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 exchange.sendResponseHeaders(405, -1);
                 return;
             }
@@ -77,7 +96,7 @@ public class UrlShortenerServer {
 
             String shortCode = UUID.randomUUID().toString().substring(0, 6);
             urlMap.put(shortCode, originalUrl);
-            String shortened = "http://localhost:8000/redirect/" + shortCode;
+            Stringshortened = "http://localhost:8000/redirect/" + shortCode;
             exchange.sendResponseHeaders(200, shortened.getBytes().length);
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(shortened.getBytes());
@@ -87,6 +106,13 @@ public class UrlShortenerServer {
 
     static class RedirectHandler implements HttpHandler {
         public void handle(HttpExchange exchange) throws IOException {
+            addCORSHeaders(exchange);
+
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
             URI requestURI = exchange.getRequestURI();
             String path = requestURI.getPath();
             String[] parts = path.split("/");
@@ -110,6 +136,22 @@ public class UrlShortenerServer {
 
             exchange.getResponseHeaders().set("Location", originalUrl);
             exchange.sendResponseHeaders(302, -1);
+        }
+    }
+
+    static class SignUpHandler implements HttpHandler {
+        public void handle(HttpExchange exchange) throws IOException {
+            addCORSHeaders(exchange);
+            // Implement sign-up logic here
+            exchange.sendResponseHeaders(200, 0);
+        }
+    }
+
+    static class LogInHandler implements HttpHandler {
+        public void handle(HttpExchange exchange) throws IOException {
+            addCORSHeaders(exchange);
+            // Implement login logic here
+            exchange.sendResponseHeaders(200, 0);
         }
     }
 }
